@@ -4,7 +4,13 @@ import { connect } from "react-redux";
 import "./UserManage.scss";
 import "../../services/userService";
 import ModalUser from "./ModalUser";
-import { getAllUsers, createNewUserService } from "../../services/userService";
+import { emitter } from "../../utils/emitter";
+import {
+  getAllUsers,
+  createNewUserService,
+  deleteUserService,
+} from "../../services/userService";
+
 class UserManage extends Component {
   constructor(props) {
     super(props);
@@ -26,36 +32,50 @@ class UserManage extends Component {
       });
       // console.log('check state user', this.state.arrUser);//[]
     }
-  }
+  };
 
   handleAddNewUser = () => {
     this.setState({
       isOpenModalUser: true,
-    })
+    });
   };
 
   toggleUserModal = () => {
     this.setState({
       isOpenModalUser: !this.state.isOpenModalUser,
-    })
-  }
+    });
+  };
 
   createNewUser = async (data) => {
-    
     try {
-      let response =await createNewUserService(data);
-      if(response && response.errCode !== 0) {
-        alert(response.errMessage)
+      let response = await createNewUserService(data);
+      if (response && response.errCode !== 0) {
+        alert(response.errMessage);
       } else {
         await this.getAllUsersFromReact();
         this.setState({
-          isOpenModalUser: false
-        })
+          isOpenModalUser: false,
+        });
+        emitter.emit("EVENT_CLEAR_MODAL_DATA");
       }
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
+
+  handleDeleteUser = async (user) => {
+    console.log("click delete", user);
+    try {
+      let res = await deleteUserService(user.id);
+      if (res && res.errCode == 0) {
+        await this.getAllUsersFromReact();
+      } else {
+        alert(res.errMessage);
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
 
   // Life cycle
   // Run component
@@ -68,13 +88,12 @@ class UserManage extends Component {
     //properties, nested
     return (
       <div className="users-container">
-        <ModalUser 
-        isOpen={this.state.isOpenModalUser}
-        toggleUserModal={this.toggleUserModal}
-        createNewUser = {this.createNewUser}
+        <ModalUser
+          isOpen={this.state.isOpenModalUser}
+          toggleUserModal={this.toggleUserModal}
+          createNewUser={this.createNewUser}
         />
-          
-        
+
         <div className="title text-center"> Manage users with Tinh</div>
         <div className="mx-1">
           <button
@@ -105,7 +124,9 @@ class UserManage extends Component {
                       <button className="btn-edit">
                         <i class="fas fa-pencil-alt"></i>
                       </button>
-                      <button className="btn-delete">
+                      <button
+                        className="btn-delete"
+                        onClick={() => this.handleDeleteUser(item)}>
                         <i class="fas fa-trash"></i>
                       </button>
                     </td>
