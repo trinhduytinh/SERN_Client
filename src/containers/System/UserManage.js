@@ -4,11 +4,13 @@ import { connect } from "react-redux";
 import "./UserManage.scss";
 import "../../services/userService";
 import ModalUser from "./ModalUser";
+import ModalEditUser from "./ModalEditUser";
 import { emitter } from "../../utils/emitter";
 import {
   getAllUsers,
   createNewUserService,
   deleteUserService,
+  editUserService,
 } from "../../services/userService";
 
 class UserManage extends Component {
@@ -17,6 +19,8 @@ class UserManage extends Component {
     this.state = {
       arrUsers: [],
       isOpenModalUser: false,
+      isOpenModalEditUser: false,
+      userEdit: {},
     };
   }
 
@@ -43,6 +47,12 @@ class UserManage extends Component {
   toggleUserModal = () => {
     this.setState({
       isOpenModalUser: !this.state.isOpenModalUser,
+    });
+  };
+
+  toggleEditUserModal = () => {
+    this.setState({
+      isOpenModalEditUser: !this.state.isOpenModalEditUser,
     });
   };
 
@@ -77,6 +87,30 @@ class UserManage extends Component {
     }
   };
 
+  handleEditUser = (user) => {
+    console.log("check edit user", user);
+    this.setState({
+      isOpenModalEditUser: true,
+      userEdit: user,
+    });
+  };
+
+  doEditUser = async (user) => {
+    try {
+      let res = await editUserService(user);
+      if (res && res.errCode === 0) {
+        this.setState({
+          isOpenModalEditUser: false,
+        });
+        await this.getAllUsersFromReact();
+      } else {
+        alert(res.errMessage);
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   // Life cycle
   // Run component
   // 1. Run constructor -> init state
@@ -93,13 +127,21 @@ class UserManage extends Component {
           toggleUserModal={this.toggleUserModal}
           createNewUser={this.createNewUser}
         />
+        {this.state.isOpenModalEditUser && (
+          <ModalEditUser
+            isOpen={this.state.isOpenModalEditUser}
+            toggleUserModal={this.toggleEditUserModal}
+            currentUser={this.state.userEdit} //truyen useredit qua cho con thonng qua props
+            editUser={this.doEditUser}
+          />
+        )}
 
         <div className="title text-center"> Manage users with Tinh</div>
         <div className="mx-1">
           <button
             className="btn btn-primary px-3"
             onClick={() => this.handleAddNewUser()}>
-            <i class="fas fa-plus"></i>Add new users
+            <i className="fas fa-plus"></i>Add new users
           </button>
         </div>
         <div className="users-table mt-3 mx-1">
@@ -121,13 +163,15 @@ class UserManage extends Component {
                     <td>{item.lastName}</td>
                     <td>{item.address}</td>
                     <td>
-                      <button className="btn-edit">
-                        <i class="fas fa-pencil-alt"></i>
+                      <button
+                        className="btn-edit"
+                        onClick={() => this.handleEditUser(item)}>
+                        <i className="fas fa-pencil-alt"></i>
                       </button>
                       <button
                         className="btn-delete"
                         onClick={() => this.handleDeleteUser(item)}>
-                        <i class="fas fa-trash"></i>
+                        <i className="fas fa-trash"></i>
                       </button>
                     </td>
                   </tr>
